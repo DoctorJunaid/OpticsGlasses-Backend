@@ -1,9 +1,9 @@
-const AdminServices = require('../services/adminServices'); 
+const AdminServices = require('../services/adminServices');
 
 const loginAdminController = async (req, res) => {
   try {
     const { email, password } = req.body;
-    
+
     if (!email || !password) {
       return res.status(400).json({
         isStatus: false,
@@ -16,18 +16,18 @@ const loginAdminController = async (req, res) => {
 
     // Cookie configuration
     const isProduction = process.env.NODE_ENV === "production";
-    
+
     res.cookie("token", result.token, {
       httpOnly: true,
       secure: isProduction, // Secure needs HTTPS
-      sameSite: isProduction ? "none" : "lax", // 'None' requires Secure: true
+      sameSite: isProduction ? "none" : undefined, // Undefined lets browser choose default (usually Lax) which is arguably better for localhost
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
-    res.status(200).json({ 
-        isStatus: true, 
-        msg: "Login successfully", 
-        data: result.user 
+    res.status(200).json({
+      isStatus: true,
+      msg: "Login successfully",
+      data: result.user
     });
 
   } catch (error) {
@@ -38,7 +38,7 @@ const loginAdminController = async (req, res) => {
     if (error.message === "Invalid credentials") {
       return res.status(401).json({ isStatus: false, msg: error.message, data: null });
     }
-    
+
     console.error("Login Error:", error); // Good practice to log the actual error on server
     res.status(500).json({
       isStatus: false,
@@ -55,7 +55,7 @@ const logoutAdminController = (req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
     secure: isProduction,
-    sameSite: isProduction ? "none" : "lax",
+    sameSite: isProduction ? "none" : undefined,
   });
 
   res.status(200).json({ isStatus: true, msg: "Logged out successfully", data: null });
@@ -64,7 +64,7 @@ const logoutAdminController = (req, res) => {
 const changePasswordController = async (req, res) => {
   try {
     const { password } = req.body;
-    const AdminId = req.user && req.user.id; 
+    const AdminId = req.user && req.user.id;
 
     if (!AdminId) {
       return res.status(401).json({ isStatus: false, msg: "Unauthorized: User not authenticated", data: null });
@@ -74,7 +74,7 @@ const changePasswordController = async (req, res) => {
     }
 
     // FIX: Used 'AdminId' instead of the undefined 'userId'
-    const user = await AdminServices.changePassword(AdminId, password); 
+    const user = await AdminServices.changePassword(AdminId, password);
 
     res.status(200).json({
       isStatus: true,
@@ -106,10 +106,10 @@ const forgotPasswordController = async (req, res) => {
   } catch (error) {
     // Security: Handle "User not found" gracefully to prevent email enumeration
     if (error.message === "User not found") {
-      return res.status(200).json({ 
-        isStatus: true, 
-        msg: "If a user with that email exists, a password reset link has been sent.", 
-        data: null 
+      return res.status(200).json({
+        isStatus: true,
+        msg: "If a user with that email exists, a password reset link has been sent.",
+        data: null
       });
     }
     res.status(500).json({ isStatus: false, msg: error.message || "Internal Server Error", data: null });
@@ -118,8 +118,8 @@ const forgotPasswordController = async (req, res) => {
 
 // Don't forget to export them!
 module.exports = {
-    loginAdminController,
-    logoutAdminController,
-    changePasswordController,
-    forgotPasswordController
+  loginAdminController,
+  logoutAdminController,
+  changePasswordController,
+  forgotPasswordController
 };
