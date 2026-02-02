@@ -8,14 +8,19 @@ const { verifyToken } = require("../middleware/authMiddleware");
  * @desc    Upload a single image
  * @access  Private
  */
-router.post("/", verifyToken, upload.single("image"), (req, res) => {
+// Use upload.any() to accept files from any field name (e.g., 'image', 'file', 'photo')
+router.post("/", verifyToken, upload.any(), (req, res) => {
     try {
-        if (!req.file) {
+        // req.files will hold the array of files when using .any()
+        // We take the first one since this is a single upload endpoint
+        const file = (req.files && req.files.length > 0) ? req.files[0] : req.file;
+
+        if (!file) {
             return res.status(400).json({ isStatus: false, msg: "No file uploaded" });
         }
 
-        // Cloudinary returns the full URL in req.file.path
-        const filePath = req.file.path;
+        // Cloudinary returns the full URL in file.path
+        const filePath = file.path;
 
         res.status(200).json({
             isStatus: true,
