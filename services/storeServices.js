@@ -42,7 +42,16 @@ const updateStoreConfig = async (updateData) => {
 // Public: Get only necessary store settings (e.g., shipping, active SEO)
 const getPublicStoreConfig = async () => {
     let store = await Store.findOne();
-    if (!store) return null;
+
+    // If no store config exists, create a default one (same as getStoreConfig)
+    if (!store) {
+        store = await Store.create({
+            storeProfile: {
+                name: "OpticsGlasses",
+                email: "admin@opticsglasses.com"
+            }
+        });
+    }
 
     // Return a subset of data safe for public consumption if needed
     // or just return the whole object if nothing is sensitive.
