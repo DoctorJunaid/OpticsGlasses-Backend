@@ -18,7 +18,9 @@ app.use(
       "http://localhost:5173",
       "http://localhost:5174",
       "http://127.0.0.1:5173",
-      "http://127.0.0.1:5174"
+      "http://127.0.0.1:5174",
+      "https://optics-glasses-frontend.vercel.app",
+      "https://optics-glasses-frontend-git-main-your-username.vercel.app"
     ],
     credentials: true,
   })

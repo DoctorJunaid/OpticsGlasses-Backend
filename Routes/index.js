@@ -18,6 +18,7 @@ const paymentRoutes = require("./paymentRoutes");
 const inventoryRoutes = require("./inventoryRoutes");
 const searchRoutes = require("./searchRoutes");
 const wishlistRoutes = require("./wishlistRoutes");
+const testRoutes = require("./testRoutes");
 
 // Public or protected routes
 router.use("/api/users", userRoutes);
@@ -35,6 +36,7 @@ router.use("/api/payments", paymentRoutes);
 router.use("/api/inventory", inventoryRoutes);
 router.use("/api/search", searchRoutes);
 router.use("/api/wishlist", wishlistRoutes);
+router.use("/api/test", testRoutes);
 router.use("/", appRoutes);
 
 

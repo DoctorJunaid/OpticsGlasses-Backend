@@ -23,6 +23,7 @@ const createUserController = async (req, res) => {
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       path: "/", // Ensure cookie is available for all routes
+      domain: process.env.NODE_ENV === "production" ? undefined : undefined, // Let browser handle domain
     };
     res.cookie("token", result.token, cookieOptions);
 
@@ -162,6 +163,7 @@ const getUserController = async (req, res) => {
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       path: "/",
+      domain: process.env.NODE_ENV === "production" ? undefined : undefined, // Let browser handle domain
     };
     console.log("SETTING TOKEN COOKIE with options:", cookieOptions);
     res.cookie("token", result.token, cookieOptions);

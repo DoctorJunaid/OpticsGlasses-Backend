@@ -22,6 +22,8 @@ const loginAdminController = async (req, res) => {
       secure: isProduction, // Secure needs HTTPS
       sameSite: isProduction ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: "/",
+      domain: isProduction ? undefined : undefined, // Let browser handle domain
     };
     console.log("SETTING ADMIN TOKEN COOKIE with options:", cookieOptions);
     res.cookie("adminToken", result.token, cookieOptions);
@@ -58,6 +60,8 @@ const logoutAdminController = (req, res) => {
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? "none" : "lax",
+    path: "/",
+    domain: isProduction ? undefined : undefined,
   });
 
   res.status(200).json({ isStatus: true, msg: "Logged out successfully", data: null });
