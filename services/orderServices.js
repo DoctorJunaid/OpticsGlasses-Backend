@@ -178,39 +178,7 @@ const getOrderById = async (id) => {
     return order;
 };
 
-// Update order (e.g., status, tracking)
-const updateOrder = async (id, updateData) => {
-    const oldOrder = await Order.findById(id);
-    if (!oldOrder) {
-        throw new Error("Order not found");
-    }
 
-    const order = await Order.findByIdAndUpdate(id, updateData, {
-        new: true,
-        runValidators: true,
-    });
-
-    // Send email notifications for status changes
-    try {
-        const user = await User.findById(order.customer);
-        if (user && user.email) {
-            // If status changed, send status update email
-            if (updateData.status && updateData.status !== oldOrder.status) {
-                await sendOrderStatusUpdate(user.email, order);
-            }
-
-            // If tracking info added and status is shipped, send shipping notification
-            if (updateData.tracking && updateData.status === 'Shipped') {
-                await sendShippingNotification(user.email, order);
-            }
-        }
-    } catch (emailError) {
-        console.error('Failed to send order update email:', emailError);
-        // Don't fail the update if email fails
-    }
-
-    return order;
-};
 
 // Delete order
 const deleteOrder = async (id) => {
