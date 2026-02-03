@@ -5,7 +5,7 @@ const {
     updateStoreConfigController,
     getPublicStoreConfigController
 } = require("../controllers/storeController");
-const { verifyToken } = require("../middleware/authMiddleware");
+const { verifyAdmin } = require("../middleware/authMiddleware");
 
 /**
  * @route   GET /api/store/public
@@ -19,13 +19,13 @@ router.get("/public", getPublicStoreConfigController);
  * @desc    Get full store configuration
  * @access  Private (Admin)
  */
-router.get("/", verifyToken, getStoreConfigController);
+router.get("/", verifyAdmin, getStoreConfigController);
 
 /**
  * @route   PATCH /api/store
  * @desc    Update store configuration
  * @access  Private (Admin)
  */
-router.patch("/", verifyToken, updateStoreConfigController);
+router.patch("/", verifyAdmin, updateStoreConfigController);
 
 module.exports = router;
