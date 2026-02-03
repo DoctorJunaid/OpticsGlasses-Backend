@@ -5,6 +5,7 @@ const {
   logoutAdminController,
   changePasswordController,
   forgotPasswordController,
+  getAdminProfileController,
 } = require("../controllers/adminController");
 const { verifyToken, verifyAdminToken } = require("../middleware/authMiddleware");
 
@@ -35,5 +36,12 @@ router.post("/forgot-password", forgotPasswordController);
  * @access  Private (Requires valid JWT)
  */
 router.put("/change-password", verifyAdminToken, changePasswordController);
+
+/**
+ * @route   GET /api/admin/me
+ * @desc    Get current admin profile & verify auth
+ * @access  Private (Admin)
+ */
+router.get("/me", verifyAdminToken, getAdminProfileController);
 
 module.exports = router;

@@ -118,10 +118,34 @@ const forgotPasswordController = async (req, res) => {
   }
 };
 
+const getAdminProfileController = async (req, res) => {
+  try {
+    if (!req.user || req.user.role !== "admin") {
+      return res.status(401).json({ isStatus: false, msg: "Unauthorized", data: null });
+    }
+
+    const Admin = require('../models/Admin');
+    const admin = await Admin.findById(req.user.id).select("-password");
+
+    if (!admin) {
+      return res.status(404).json({ isStatus: false, msg: "Admin user not found", data: null });
+    }
+
+    res.status(200).json({
+      isStatus: true,
+      msg: "Admin profile retrieved successfully",
+      data: admin
+    });
+  } catch (error) {
+    res.status(500).json({ isStatus: false, msg: error.message || "Internal Server Error", data: null });
+  }
+};
+
 // Don't forget to export them!
 module.exports = {
   loginAdminController,
   logoutAdminController,
   changePasswordController,
-  forgotPasswordController
+  forgotPasswordController,
+  getAdminProfileController
 };

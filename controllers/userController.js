@@ -260,19 +260,39 @@ const changePasswordController = async (req, res) => {
 };
 
 // This controller assumes an authentication middleware has populated req.user
-const getProfileController = (req, res) => {
-  if (!req.user) {
-    return res.status(401).json({
+const getProfileController = async (req, res) => {
+  try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({
+        isStatus: false,
+        msg: "Unauthorized: User not authenticated.",
+        data: null
+      });
+    }
+
+    const User = require("../models/User");
+    const user = await User.findById(req.user.id).select("-password");
+
+    if (!user) {
+      return res.status(404).json({
+        isStatus: false,
+        msg: "User not found",
+        data: null
+      });
+    }
+
+    res.status(200).json({
+      isStatus: true,
+      msg: "User profile retrieved successfully",
+      data: user
+    });
+  } catch (error) {
+    res.status(500).json({
       isStatus: false,
-      msg: "Unauthorized: User not authenticated.",
+      msg: error.message || "Internal Server Error",
       data: null
     });
   }
-  res.status(200).json({
-    isStatus: true,
-    msg: "User profile retrieved successfully",
-    data: req.user
-  });
 };
 
 // Get All Users

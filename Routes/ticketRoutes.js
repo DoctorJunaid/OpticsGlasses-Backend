@@ -8,15 +8,15 @@ const {
     addMessageController,
     deleteTicketController,
 } = require("../controllers/ticketController");
-const { verifyToken } = require("../middleware/authMiddleware");
+const { verifyToken, verifyAdminToken } = require("../middleware/authMiddleware");
 
 /**
  * @route   GET /api/tickets
  * @desc    Get all tickets with filtering, sorting, and pagination
- * @access  Private (Admin or Authenticated User)
+ * @access  Private (Admin)
  */
 // TODO: Consider separating admin view (all tickets) vs user view (own tickets)
-router.get("/", verifyToken, getAllTicketsController);
+router.get("/", verifyAdminToken, getAllTicketsController);
 
 /**
  * @route   GET /api/tickets/:id
@@ -52,6 +52,6 @@ router.post("/:id/message", verifyToken, addMessageController);
  * @desc    Delete a ticket
  * @access  Private (Admin)
  */
-router.delete("/:id", verifyToken, deleteTicketController);
+router.delete("/:id", verifyAdminToken, deleteTicketController);
 
 module.exports = router;

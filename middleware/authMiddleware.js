@@ -16,9 +16,9 @@ const verifyToken = (req, res, next) => {
       token = authHeader.slice(7);
       console.log("AUTH: Found token in Authorization header");
     } else {
-      token = req.cookies?.token;
+      token = req.cookies?.token || req.cookies?.adminToken;
       if (token) {
-        console.log("AUTH: Found token in cookies");
+        console.log(`AUTH: Found token in ${req.cookies?.token ? 'cookies' : 'admin cookies'}`);
       } else {
         console.log("AUTH: No token found in cookies. All cookies:", req.cookies);
       }
@@ -77,17 +77,26 @@ const verifyAdminToken = (req, res, next) => {
     if (authHeader?.startsWith("Bearer ")) {
       token = authHeader.slice(7);
     } else {
-      token = req.cookies?.adminToken; // Check specific admin cookie
+      token = req.cookies?.adminToken;
     }
 
     if (!token) {
+      console.log("ADMIN AUTH FAIL: No adminToken found");
       return res.status(401).json({ msg: "No admin token provided" });
     }
 
     const decoded = jwt.verify(token, SECRET_KEY);
-    req.user = decoded; // Attach user to request
+
+    // CRITICAL: Ensure the token actually belongs to an admin
+    if (decoded.role !== "admin") {
+      console.log("ADMIN AUTH FAIL: User is not an admin", decoded);
+      return res.status(403).json({ msg: "Forbidden: Admin access required" });
+    }
+
+    req.user = decoded;
     return next();
   } catch (err) {
+    console.log("ADMIN AUTH FAIL: JWT Error:", err.message);
     return res.status(401).json({ msg: "Invalid or expired admin token" });
   }
 };

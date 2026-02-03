@@ -8,7 +8,7 @@ const {
     deleteOrderController,
     getMyOrdersController
 } = require("../controllers/orderController");
-const { verifyToken } = require("../middleware/authMiddleware");
+const { verifyToken, verifyAdminToken } = require("../middleware/authMiddleware");
 
 /**
  * @route   POST /api/orders
@@ -22,7 +22,7 @@ router.post("/", verifyToken, createOrderController);
  * @desc    Get all orders (Admin)
  * @access  Private (Admin)
  */
-router.get("/", verifyToken, getAllOrdersController);
+router.get("/", verifyAdminToken, getAllOrdersController);
 
 /**
  * @route   GET /api/orders/my-orders
@@ -43,13 +43,13 @@ router.get("/:id", verifyToken, getOrderByIdController);
  * @desc    Update an order (Status, etc.)
  * @access  Private (Admin)
  */
-router.patch("/:id", verifyToken, updateOrderController);
+router.patch("/:id", verifyAdminToken, updateOrderController);
 
 /**
  * @route   DELETE /api/orders/:id
  * @desc    Delete an order
  * @access  Private (Admin)
  */
-router.delete("/:id", verifyToken, deleteOrderController);
+router.delete("/:id", verifyAdminToken, deleteOrderController);
 
 module.exports = router;

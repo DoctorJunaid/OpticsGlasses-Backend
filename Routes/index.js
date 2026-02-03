@@ -13,6 +13,7 @@ const reviewRoutes = require("./reviewRoutes");
 const storeRoutes = require("./storeRoutes");
 const dashboardRoutes = require("./dashboardRoutes");
 const uploadRoutes = require("./uploadRoutes");
+const paymentMethodRoutes = require("./paymentMethodRoutes");
 
 // Public or protected routes
 router.use("/api/users", userRoutes);
@@ -25,6 +26,7 @@ router.use("/api/reviews", reviewRoutes);
 router.use("/api/store", storeRoutes);
 router.use("/api/dashboard", dashboardRoutes);
 router.use("/api/upload", uploadRoutes);
+router.use("/api/payment-methods", paymentMethodRoutes);
 router.use("/", appRoutes);
 
 

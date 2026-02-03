@@ -11,7 +11,7 @@ const {
   updateUserController,
   getAllUsersController
 } = require("../controllers/userController");
-const { verifyToken, verifyUser } = require("../middleware/authMiddleware");
+const { verifyToken, verifyUser, verifyAdminToken } = require("../middleware/authMiddleware");
 
 /**
  * @route   POST /api/users/signup
@@ -64,10 +64,10 @@ router.get("/me", verifyToken, getProfileController);
 
 /**
  * @route   GET /api/users/
- * @desc    Get all users (admin filtered usually, but public for now as per request)
- * @access  Public
+ * @desc    Get all users (Admin)
+ * @access  Private (Admin)
  */
-router.get("/", getAllUsersController);
+router.get("/", verifyAdminToken, getAllUsersController);
 
 /**
  * @route   PATCH /api/users/:username
