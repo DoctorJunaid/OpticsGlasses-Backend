@@ -76,7 +76,7 @@ const couponSchema = new mongoose.Schema(
 );
 
 // Index for faster querying on code
-couponSchema.index({ code: 1 }, { unique: true });
+
 
 // Index for expiry date to quickly find expired coupons
 couponSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 }); // Automatically removes expired documents
