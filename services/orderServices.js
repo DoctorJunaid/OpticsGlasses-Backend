@@ -45,6 +45,20 @@ const createOrder = async (orderData) => {
         });
     }
 
+    // 1.5. Update User's Shipping Address (Auto-save)
+    if (orderData.customer && shippingAddress) {
+        try {
+            await User.findByIdAndUpdate(
+                orderData.customer,
+                { $set: { shippingAddress: shippingAddress } },
+                { new: true, runValidators: true }
+            );
+        } catch (err) {
+            console.error("Failed to auto-save user address:", err);
+            // Non-critical, continue with order
+        }
+    }
+
     // 2. Calculate Shipping based on Store Config
     let shippingCost = 0;
     const storeConfig = await Store.findOne();
@@ -84,11 +98,21 @@ const createOrder = async (orderData) => {
     // 6. Send order confirmation email
     try {
         const user = await User.findById(orderData.customer);
-        if (user && user.email) {
-            await sendOrderConfirmation(user.email, order);
+        if (user) {
+            // Update User Stats (Orders Count & Total Spent)
+            await User.findByIdAndUpdate(user._id, {
+                $inc: {
+                    ordersCount: 1,
+                    totalSpent: total
+                }
+            });
+
+            if (user.email) {
+                await sendOrderConfirmation(user.email, order);
+            }
         }
     } catch (emailError) {
-        console.error('Failed to send order confirmation email:', emailError);
+        console.error('Failed to send order confirmation email or update stats:', emailError);
         // Don't fail the order creation if email fails
     }
 

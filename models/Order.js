@@ -121,7 +121,7 @@ orderSchema.pre("validate", async function () {
 orderSchema.pre(/^find/, async function () {
   this.populate({
     path: "customer",
-    select: "firstName lastName email", // Only select relevant user fields
+    select: "name email", // Only select relevant user fields
   }).populate({
     path: "items.product",
     select: "name sku price mainImage", // Only select relevant product fields
