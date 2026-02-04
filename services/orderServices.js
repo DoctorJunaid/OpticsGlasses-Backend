@@ -2,12 +2,14 @@ const Order = require("../models/Order");
 const Product = require("../models/Product");
 const Store = require("../models/Store");
 const User = require("../models/User");
+const Coupon = require("../models/Coupon");
 const inventoryServices = require("./inventoryServices");
+const couponServices = require("./couponServices");
 const { sendOrderConfirmation, sendOrderStatusUpdate, sendShippingNotification } = require("../utils/email");
 
 // Create a new order with server-side calculation
 const createOrder = async (orderData) => {
-    const { items, shippingAddress, paymentMethod } = orderData;
+    const { items, shippingAddress, paymentMethod, couponCode } = orderData;
 
     if (!items || items.length === 0) {
         throw new Error("Order must contain at least one item.");
@@ -72,17 +74,50 @@ const createOrder = async (orderData) => {
         shippingCost = standardRate;
     }
 
-    // 3. Calculate Final Total
-    const tax = 0;
-    const total = calculatedSubtotal + tax + shippingCost;
+    // 3. Calculate Discount (if coupon provided)
+    let discount = 0;
+    let appliedCoupon = null;
 
-    // 4. Create Order
+    if (couponCode) {
+        try {
+            // Validate coupon with CURRENT subtotal
+            appliedCoupon = await couponServices.validateCoupon(couponCode, calculatedSubtotal);
+
+            // Calculate discount amount
+            if (appliedCoupon.type === 'percentage') {
+                discount = (calculatedSubtotal * appliedCoupon.value) / 100;
+            } else {
+                discount = appliedCoupon.value;
+            }
+
+            // Cap discount at subtotal (cannot be negative total)
+            if (discount > calculatedSubtotal) {
+                discount = calculatedSubtotal;
+            }
+
+            // Increment usage count for the coupon
+            await Coupon.findByIdAndUpdate(appliedCoupon._id, { $inc: { usedCount: 1 } });
+
+        } catch (error) {
+            // If coupon is invalid (maybe expired just now), we can either throw error or ignore it.
+            // Throwing error is safer so user knows why price changed.
+            throw new Error(`Coupon processing failed: ${error.message}`);
+        }
+    }
+
+    // 4. Calculate Final Total
+    const tax = 0;
+    const total = Math.max(0, calculatedSubtotal + tax + shippingCost - discount);
+
+    // 5. Create Order
     const order = await Order.create({
         ...orderData,
         items: orderItems,
         subtotal: calculatedSubtotal,
         tax: tax,
         shippingCost: shippingCost,
+        discount: discount,
+        couponCode: couponCode,
         total: total
     });
 
