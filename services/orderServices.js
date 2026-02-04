@@ -6,7 +6,7 @@ const Coupon = require("../models/Coupon");
 const inventoryServices = require("./inventoryServices");
 const couponServices = require("./couponServices");
 const { sendOrderConfirmation, sendOrderStatusUpdate, sendShippingNotification } = require("../utils/email");
-const { sendOrderConfirmationSMS, sendOrderStatusSMS } = require("../utils/sms");
+const { sendOrderConfirmationSMS, sendOrderStatusSMS, sendShippingSMS } = require("../utils/sms");
 
 // Create a new order with server-side calculation
 const createOrder = async (orderData) => {
@@ -195,9 +195,14 @@ const updateOrder = async (id, updateData) => {
                 }
             }
 
-            // Shipping notification (Email only for now or can add SMS too)
-            if (updateData.tracking && updateData.status === 'Shipped' && user.email) {
-                await sendShippingNotification(user.email, order);
+            // Shipping notification
+            if (updateData.tracking && updateData.status === 'Shipped') {
+                if (user.email) {
+                    await sendShippingNotification(user.email, order);
+                }
+                if (user.phone) {
+                    await sendShippingSMS(user.phone, order);
+                }
             }
         }
     } catch (notificationError) {

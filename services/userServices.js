@@ -7,8 +7,12 @@ const { sendSMS, sendOTPSMS } = require('../utils/sms');
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 // Signin user (Login)
-const getUser = async (email, password) => {
-  const user = await User.findOne({ email }).select("+password");
+const getUser = async (identifier, password) => {
+  // identifier can be either email or phone
+  const user = await User.findOne({
+    $or: [{ email: identifier }, { phone: identifier }]
+  }).select("+password");
+
   if (!user) throw new Error("User not found");
 
   const isMatch = await bcrypt.compare(password, user.password);
@@ -23,6 +27,7 @@ const getUser = async (email, password) => {
     username: user.username,
     email: user.email,
     name: user.name,
+    phone: user.phone,
   });
 
   return {
@@ -32,6 +37,7 @@ const getUser = async (email, password) => {
       username: user.username,
       email: user.email,
       name: user.name,
+      phone: user.phone,
     },
   };
 };
@@ -51,10 +57,15 @@ const reset = async (username, password) => {
 // Create new user (Signup)
 const createUser = async ({ username, email, password, name, phone }) => {
   const existingUser = await User.findOne({
-    $or: [{ email }, { username }],
+    $or: [{ email }, { username }, { phone }],
   });
 
-  if (existingUser) throw new Error("User already exists");
+  if (existingUser) {
+    if (existingUser.email === email) throw new Error("Email already registered");
+    if (existingUser.phone === phone) throw new Error("Phone number already registered");
+    if (existingUser.username === username) throw new Error("Username already taken");
+    throw new Error("User already exists");
+  }
 
   const hashedPassword = await bcrypt.hash(password, 10);
   const otp = generateOTP();
@@ -71,14 +82,16 @@ const createUser = async ({ username, email, password, name, phone }) => {
     isVerified: false,
   });
 
-  // Send OTP notifications
+  // Send OTP notifications to both email and phone
   try {
+    const promises = [];
     if (user.email) {
-      await sendOTPEmail(user.email, otp);
+      promises.push(sendOTPEmail(user.email, otp));
     }
     if (user.phone) {
-      await sendOTPSMS(user.phone, otp);
+      promises.push(sendOTPSMS(user.phone, otp));
     }
+    await Promise.allSettled(promises);
   } catch (notificationError) {
     console.error('Failed to send OTP notifications:', notificationError);
   }
@@ -89,13 +102,18 @@ const createUser = async ({ username, email, password, name, phone }) => {
       username: user.username,
       email: user.email,
       name: user.name,
+      phone: user.phone,
       isVerified: user.isVerified
     },
   };
 };
 
-const verifyOTP = async (email, otp) => {
-  const user = await User.findOne({ email }).select("+otp +otpExpires");
+const verifyOTP = async (identifier, otp) => {
+  // identifier can be either email or phone
+  const user = await User.findOne({
+    $or: [{ email: identifier }, { phone: identifier }]
+  }).select("+otp +otpExpires");
+
   if (!user) throw new Error("User not found");
 
   if (user.isVerified) throw new Error("User is already verified");
@@ -114,13 +132,17 @@ const verifyOTP = async (email, otp) => {
     username: user.username,
     email: user.email,
     name: user.name,
+    phone: user.phone,
   });
 
-  // Send welcome email after verification
+  // Send welcome message to both email and phone
   try {
-    await sendWelcomeEmail(user.email, { name: user.name, email: user.email });
+    await Promise.allSettled([
+      sendWelcomeEmail(user.email, { name: user.name, email: user.email }),
+      // Optional: sendWelcomeSMS(user.phone, { name: user.name }) if we had one
+    ]);
   } catch (err) {
-    console.error("Welcome email failed after verification:", err);
+    console.error("Welcome notifications failed after verification:", err);
   }
 
   return {
@@ -130,12 +152,15 @@ const verifyOTP = async (email, otp) => {
       username: user.username,
       email: user.email,
       name: user.name,
+      phone: user.phone,
     },
   };
 };
 
-const resendOTP = async (email) => {
-  const user = await User.findOne({ email });
+const resendOTP = async (identifier) => {
+  const user = await User.findOne({
+    $or: [{ email: identifier }, { phone: identifier }]
+  });
   if (!user) throw new Error("User not found");
 
   if (user.isVerified) throw new Error("User is already verified");
@@ -148,8 +173,10 @@ const resendOTP = async (email) => {
   await user.save();
 
   try {
-    if (user.email) await sendOTPEmail(user.email, otp);
-    if (user.phone) await sendOTPSMS(user.phone, otp);
+    const promises = [];
+    if (user.email) promises.push(sendOTPEmail(user.email, otp));
+    if (user.phone) promises.push(sendOTPSMS(user.phone, otp));
+    await Promise.allSettled(promises);
   } catch (notificationError) {
     console.error('Failed to resend OTP notifications:', notificationError);
     throw new Error("Failed to send code, please try again later");

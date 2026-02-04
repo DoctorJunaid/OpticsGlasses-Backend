@@ -64,9 +64,15 @@ const sendOTPSMS = async (phoneNumber, otp) => {
     return await sendSMS(phoneNumber, message);
 };
 
+const sendShippingSMS = async (phoneNumber, orderData) => {
+    const message = `Great news! Your order #${orderData.orderNumber} has been shipped. Tracking: ${orderData.tracking}. View details in your account.`;
+    return await sendSMS(phoneNumber, message);
+};
+
 module.exports = {
     sendSMS,
     sendOrderConfirmationSMS,
     sendOrderStatusSMS,
     sendOTPSMS,
+    sendShippingSMS,
 };

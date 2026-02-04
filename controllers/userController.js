@@ -5,13 +5,13 @@ const jwt = require('jsonwebtoken');
 // controller for signUp a user
 const createUserController = async (req, res) => {
   try {
-    const { username, email, password, name, phone } = req.body; // Added 'name'
-    if (!username || !email || !password || !name) // Added 'name' check
+    const { username, email, password, name, phone } = req.body;
+    if (!username || !email || !password || !name || !phone)
       return res
         .status(400)
         .json({
           isStatus: false,
-          msg: "Please provide all required fields (username, email, password, name)",
+          msg: "Please provide all required fields (username, email, password, name, phone)",
           data: null,
         });
     const result = await userServices.createUser({ username, email, password, name, phone });
@@ -133,26 +133,27 @@ const resetPasswordUserController = async (req, res) => {
 
 // controller for logging in a user
 const getUserController = async (req, res) => {
+  const { email, phone, identifier, password } = req.body;
+  const loginIdentifier = identifier || email || phone;
   try {
-    const { email, password } = req.body;
-    if (!email || !password)
+    if (!loginIdentifier || !password)
       return res
         .status(400)
         .json({
           isStatus: false,
-          msg: "Please provide email and password",
+          msg: "Please provide email/phone and password",
           data: null,
         });
-    const result = await userServices.getUser(email, password);
+    const result = await userServices.getUser(loginIdentifier, password);
 
     // Set HTTP-only cookie
     // Helper to get cookie options based on environment/request (Duplicate logic for now or refactor to shared util)
     const getCookieOptions = (req) => {
-      const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https';
+      const isProxySecure = req.secure || req.headers['x-forwarded-proto'] === 'https';
       return {
         httpOnly: true,
-        secure: isSecure,
-        sameSite: isSecure ? "none" : "lax",
+        secure: isProxySecure,
+        sameSite: isProxySecure ? "none" : "lax",
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         path: "/",
       };
@@ -181,7 +182,7 @@ const getUserController = async (req, res) => {
         isStatus: false,
         msg: "Your account is not verified. Please verify your email/phone.",
         requireVerification: true,
-        email: email
+        identifier: loginIdentifier
       });
     }
     res
@@ -349,19 +350,20 @@ const updateMeController = async (req, res) => {
 
 const verifyOTPController = async (req, res) => {
   try {
-    const { email, otp } = req.body;
-    if (!email || !otp) {
-      return res.status(400).json({ isStatus: false, msg: "Email and code are required", data: null });
+    const { email, phone, identifier, otp } = req.body;
+    const verifyIdentifier = identifier || email || phone;
+    if (!verifyIdentifier || !otp) {
+      return res.status(400).json({ isStatus: false, msg: "Identifier (email or phone) and code are required", data: null });
     }
 
-    const result = await userServices.verifyOTP(email, otp);
+    const result = await userServices.verifyOTP(verifyIdentifier, otp);
 
     // Set HTTP-only cookie after successful verification
-    const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https';
+    const isProxySecure = req.secure || req.headers['x-forwarded-proto'] === 'https';
     const cookieOptions = {
       httpOnly: true,
-      secure: isSecure,
-      sameSite: isSecure ? "none" : "lax",
+      secure: isProxySecure,
+      sameSite: isProxySecure ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
       path: "/",
     };
@@ -379,12 +381,13 @@ const verifyOTPController = async (req, res) => {
 
 const resendOTPController = async (req, res) => {
   try {
-    const { email } = req.body;
-    if (!email) {
-      return res.status(400).json({ isStatus: false, msg: "Email is required", data: null });
+    const { email, phone, identifier } = req.body;
+    const resendIdentifier = identifier || email || phone;
+    if (!resendIdentifier) {
+      return res.status(400).json({ isStatus: false, msg: "Identifier (email or phone) is required", data: null });
     }
 
-    await userServices.resendOTP(email);
+    await userServices.resendOTP(resendIdentifier);
 
     res.status(200).json({
       isStatus: true,
