@@ -48,18 +48,26 @@ const createOrder = async (orderData) => {
     }
 
     // 1.5. Update User's Shipping Address (Auto-save)
-    if (orderData.customer && shippingAddress) {
+    // 1.5. Update User's Shipping Address & Phone (Auto-save)
+    if (orderData.customer) {
         try {
-            await User.findByIdAndUpdate(
-                orderData.customer,
-                { $set: { shippingAddress: shippingAddress } },
-                { new: true, runValidators: true }
-            );
+            const updates = {};
+            if (shippingAddress) updates.shippingAddress = shippingAddress;
+            if (orderData.phone) updates.phone = orderData.phone;
+
+            if (Object.keys(updates).length > 0) {
+                await User.findByIdAndUpdate(
+                    orderData.customer,
+                    { $set: updates },
+                    { new: true, runValidators: true }
+                );
+            }
         } catch (err) {
-            console.error("Failed to auto-save user address:", err);
+            console.error("Failed to auto-save user details:", err);
             // Non-critical, continue with order
         }
     }
+
 
     // 2. Calculate Shipping based on Store Config
     let shippingCost = 0;
