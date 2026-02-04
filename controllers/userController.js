@@ -327,9 +327,38 @@ const getAllUsersController = async (req, res) => {
   }
 };
 
+// Update current user profile
+const updateMeController = async (req, res) => {
+  try {
+    if (!req.user || !req.user.username) {
+      return res.status(401).json({
+        isStatus: false,
+        msg: "Unauthorized: User not authenticated.",
+        data: null
+      });
+    }
+
+    const { username } = req.user;
+    const user = await userServices.updateUser(username, req.body);
+
+    res.status(200).json({
+      isStatus: true,
+      msg: "Profile updated successfully",
+      data: user
+    });
+  } catch (error) {
+    res.status(500).json({
+      isStatus: false,
+      msg: error.message || "Internal Server Error",
+      data: null
+    });
+  }
+};
+
 module.exports = {
   createUserController,
   updateUserController,
+  updateMeController,
   resetPasswordUserController,
   getUserController,
   logoutController,

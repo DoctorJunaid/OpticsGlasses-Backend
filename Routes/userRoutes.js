@@ -9,6 +9,7 @@ const {
   changePasswordController,
   getProfileController,
   updateUserController,
+  updateMeController,
   getAllUsersController
 } = require("../controllers/userController");
 const { verifyToken, verifyUser, verifyAdminToken } = require("../middleware/authMiddleware");
@@ -61,6 +62,7 @@ router.patch("/change-password", verifyToken, changePasswordController);
  * @access  Private
  */
 router.get("/me", verifyToken, getProfileController);
+router.patch("/update-me", verifyToken, updateMeController);
 
 /**
  * @route   GET /api/users/
