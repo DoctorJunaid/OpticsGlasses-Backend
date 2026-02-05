@@ -65,9 +65,19 @@ app.get("/", (req, res) => {
   });
 });
 
-// Database connection (Non-blocking)
-connectDB().catch(err => {
-  console.error("Critical: Initial DB connection failed", err);
+// Database connection middleware (Vital for serverless)
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    console.error("Database connection middleware error:", error.message);
+    res.status(503).json({
+      isStatus: false,
+      msg: "Database connection failed. Please try again shortly.",
+      error: error.message
+    });
+  }
 });
 
 // Route handling

@@ -1,29 +1,49 @@
 const mongoose = require("mongoose");
 
+/**
+ * Global is used here to maintain a cached connection across hot reloads
+ * in development and across function invocations in serverless environments.
+ */
+let cached = global.mongoose;
+
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
+
 const connectDB = async () => {
-  try {
-    const dbUri = process.env.DATABASE_URI;
+  const dbUri = process.env.DATABASE_URI;
 
-    if (!dbUri) {
-      throw new Error("DATABASE_URI is not defined in environment variables");
-    }
-
-    // Attempt to connect
-    const conn = await mongoose.connect(dbUri, {
-      // Mongoose 6+ has these as default, but good to be explicit for stability
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      dbName: 'opticsGlasses' // Ensure correct database name is used
-    });
-
-    console.log(`✅ Database connected: ${conn.connection.host}`);
-    return conn;
-  } catch (error) {
-    console.error("❌ MongoDB connection failed:", error.message);
-    // DO NOT process.exit(1) on serverless environments like Vercel
-    // Instead, throw the error so the calling function can handle it or let it respond with 500
-    throw error;
+  if (!dbUri) {
+    throw new Error("DATABASE_URI is not defined in environment variables");
   }
+
+  if (cached.conn) {
+    console.log("Using existing MongoDB connection");
+    return cached.conn;
+  }
+
+  if (!cached.promise) {
+    const opts = {
+      dbName: 'opticsGlasses',
+      bufferCommands: false, // Disable Mongoose buffering for faster error detection in serverless
+    };
+
+    console.log("Connecting to MongoDB...");
+    cached.promise = mongoose.connect(dbUri, opts).then((mongoose) => {
+      console.log("✅ New MongoDB connection established");
+      return mongoose;
+    });
+  }
+
+  try {
+    cached.conn = await cached.promise;
+  } catch (e) {
+    cached.promise = null;
+    console.error("❌ MongoDB connection failed:", e.message);
+    throw e;
+  }
+
+  return cached.conn;
 };
 
 module.exports = connectDB;
