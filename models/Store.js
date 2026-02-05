@@ -104,6 +104,12 @@ const storeSchema = new mongoose.Schema(
       {
         name: { type: String, required: true, trim: true }, // e.g., Stripe, PayPal, COD
         provider: { type: String, trim: true }, // e.g., stripe, paypal
+        instructions: { type: String, trim: true }, // For bank transfer instructions
+        type: {
+          type: String,
+          enum: ["stripe", "cod", "bankTransfer"],
+          default: "cod"
+        },
         status: {
           type: String,
           enum: ["active", "inactive"],

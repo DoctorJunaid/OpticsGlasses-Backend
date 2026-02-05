@@ -127,7 +127,8 @@ const createOrder = async (orderData) => {
         shippingCost: shippingCost,
         discount: discount,
         couponCode: couponCode,
-        total: total
+        total: total,
+        bankTransferDetails: orderData.bankTransferDetails // Explicitly mapped
     });
 
     // 5. Update inventory after successful order creation

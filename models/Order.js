@@ -84,6 +84,11 @@ const orderSchema = new mongoose.Schema(
       zip: String,
       country: String,
     },
+    bankTransferDetails: {
+      transactionId: { type: String, trim: true },
+      paymentTime: { type: String, trim: true },
+      message: { type: String, trim: true },
+    },
     tracking: {
       carrier: String,
       number: String,
