@@ -86,7 +86,7 @@ const changePasswordController = async (req, res) => {
     res.status(200).json({
       isStatus: true,
       msg: "Password successfully changed",
-      data: { id: user._id, username: user.username, email: user.email, name: user.name },
+      data: { id: user._id, email: user.email, name: user.name },
     });
   } catch (error) {
     if (error.message === "User not found") {

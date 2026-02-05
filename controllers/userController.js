@@ -5,16 +5,16 @@ const jwt = require('jsonwebtoken');
 // controller for signUp a user
 const createUserController = async (req, res) => {
   try {
-    const { username, email, password, name, phone } = req.body;
-    if (!username || !email || !password || !name || !phone)
+    const { email, password, name, phone } = req.body;
+    if (!email || !password || !name || !phone)
       return res
         .status(400)
         .json({
           isStatus: false,
-          msg: "Please provide all required fields (username, email, password, name, phone)",
+          msg: "Please provide all required fields (email, password, name, phone)",
           data: null,
         });
-    const result = await userServices.createUser({ username, email, password, name, phone });
+    const result = await userServices.createUser({ email, password, name, phone });
 
     res
       .status(201)
@@ -42,9 +42,9 @@ const createUserController = async (req, res) => {
 //controller for updating user info
 const updateUserController = async (req, res) => {
   try {
-    const { username } = req.params;
+    const { id } = req.params;
     // We pass the entire body. Service handles filtering allowed fields.
-    const user = await userServices.updateUser(username, req.body);
+    const user = await userServices.updateUser(id, req.body);
 
     res
       .status(200)
@@ -255,7 +255,7 @@ const changePasswordController = async (req, res) => {
     res.status(200).json({
       isStatus: true,
       msg: "Password successfully changed",
-      data: { id: user._id, username: user.username, email: user.email, name: user.name }, // Return relevant user data
+      data: { id: user._id, email: user.email, name: user.name }, // Return relevant user data
     });
   } catch (error) {
     if (error.message === "User not found") {
@@ -323,7 +323,7 @@ const getAllUsersController = async (req, res) => {
 // Update current user profile
 const updateMeController = async (req, res) => {
   try {
-    if (!req.user || !req.user.username) {
+    if (!req.user || !req.user.id) {
       return res.status(401).json({
         isStatus: false,
         msg: "Unauthorized: User not authenticated.",
@@ -331,8 +331,8 @@ const updateMeController = async (req, res) => {
       });
     }
 
-    const { username } = req.user;
-    const user = await userServices.updateUser(username, req.body);
+    const { id } = req.user;
+    const user = await userServices.updateUser(id, req.body);
 
     res.status(200).json({
       isStatus: true,

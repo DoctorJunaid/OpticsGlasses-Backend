@@ -94,10 +94,10 @@ router.patch("/update-me", verifyToken, updateMeController);
 router.get("/", verifyAdminToken, getAllUsersController);
 
 /**
- * @route   PATCH /api/users/:username
- * @desc    Update user profile by username
+ * @route   PATCH /api/users/:id
+ * @desc    Update user profile by ID
  * @access  Private (Self or Admin)
  */
-router.patch("/:username", verifyToken, verifyUser, updateUserController);
+router.patch("/:id", verifyToken, verifyUser, updateUserController);
 
 module.exports = router;

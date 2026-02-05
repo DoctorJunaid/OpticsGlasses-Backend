@@ -47,7 +47,7 @@ const verifyUser = (req, res, next) => {
     return res.status(401).json({ msg: "Not Authenticated" });
   }
 
-  if (req.params.username && req.user.username !== req.params.username) {
+  if (req.params.id && req.user.id !== req.params.id) {
     return res.status(403).json({ msg: "Forbidden: not your account" });
   }
 

@@ -30,7 +30,7 @@ const getAdmin = async (email, password) => {
     token,
     user: {
       id: admin._id,
-      username: admin.username,
+
       email: admin.email,
       name: admin.name,
       role: "admin",

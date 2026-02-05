@@ -26,7 +26,6 @@ const getUser = async (identifier, password) => {
 
   const token = signToken({
     id: user._id,
-    username: user.username,
     email: user.email,
     name: user.name,
     phone: user.phone,
@@ -36,7 +35,6 @@ const getUser = async (identifier, password) => {
     token,
     user: {
       id: user._id,
-      username: user.username,
       email: user.email,
       name: user.name,
       phone: user.phone,
@@ -44,11 +42,11 @@ const getUser = async (identifier, password) => {
   };
 };
 
-// Resetting user password (Direct update by username)
-const reset = async (username, password) => {
+// Resetting user password (Direct update by ID)
+const reset = async (userId, password) => {
   const hashedPassword = await bcrypt.hash(password, 10);
-  const user = await User.findOneAndUpdate(
-    { username },
+  const user = await User.findByIdAndUpdate(
+    userId,
     { password: hashedPassword },
     { new: true },
   );
@@ -57,15 +55,14 @@ const reset = async (username, password) => {
 };
 
 // Create new user (Signup)
-const createUser = async ({ username, email, password, name, phone }) => {
+const createUser = async ({ email, password, name, phone }) => {
   const existingUser = await User.findOne({
-    $or: [{ email }, { username }, { phone }],
+    $or: [{ email }, { phone }],
   });
 
   if (existingUser) {
     if (existingUser.email === email) throw new Error("Email already registered");
     if (existingUser.phone === phone) throw new Error("Phone number already registered");
-    if (existingUser.username === username) throw new Error("Username already taken");
     throw new Error("User already exists");
   }
 
@@ -74,7 +71,6 @@ const createUser = async ({ username, email, password, name, phone }) => {
   const otpExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
   const user = await User.create({
-    username,
     email,
     name,
     phone,
@@ -101,7 +97,6 @@ const createUser = async ({ username, email, password, name, phone }) => {
   return {
     user: {
       id: user._id,
-      username: user.username,
       email: user.email,
       name: user.name,
       phone: user.phone,
@@ -131,7 +126,6 @@ const verifyOTP = async (identifier, otp) => {
 
   const token = signToken({
     id: user._id,
-    username: user.username,
     email: user.email,
     name: user.name,
     phone: user.phone,
@@ -151,7 +145,6 @@ const verifyOTP = async (identifier, otp) => {
     token,
     user: {
       id: user._id,
-      username: user.username,
       email: user.email,
       name: user.name,
       phone: user.phone,
@@ -187,15 +180,14 @@ const resendOTP = async (identifier) => {
   return true;
 };
 
-const updateUser = async (username, updateData) => {
+const updateUser = async (userId, updateData) => {
   // Security: Prevent updating sensitive fields like password or role through this route
   delete updateData.password;
   delete updateData.isAdmin;
   delete updateData.email; // Usually email updates require verification, keeping strict for now or allow if needed.
-  delete updateData.username; // Username usually shouldn't change easily
 
-  const user = await User.findOneAndUpdate(
-    { username },
+  const user = await User.findByIdAndUpdate(
+    userId,
     updateData,
     { new: true, runValidators: true },
   );
@@ -210,7 +202,7 @@ const forgotPassword = async (email) => {
   if (!user) throw new Error("User not found");
 
   // generate JWT token, expires in 15 minutes
-  const token = tempToken({ id: user._id, username: user.username });
+  const token = tempToken({ id: user._id });
   const resetLink = `${process.env.FRONT_END_URL}/reset-password?token=${token}`;
 
   // Send password reset email using new template

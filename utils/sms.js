@@ -111,7 +111,7 @@ const sendWelcomeSMS = async (phoneNumber, userData) => {
  * @param {Object} orderData 
  */
 const sendOrderConfirmationSMS = async (phoneNumber, orderData) => {
-  const message = `Order Confirmed! Your order ${orderData.orderNumber} for $${orderData.totalAmount} has been received. Thank you for shopping with Optics Glasses!`;
+  const message = `Order Confirmed! Your order ${orderData.orderNumber} for RS: ${orderData.total}. Thank you for shopping with Optics Glasses!`;
   return await sendSMS(phoneNumber, message);
 };
 
@@ -131,7 +131,8 @@ const sendOrderStatusSMS = async (phoneNumber, orderData) => {
  * @param {Object} orderData 
  */
 const sendShippingSMS = async (phoneNumber, orderData) => {
-  const message = `Great news! Your order #${orderData.orderNumber} has been shipped. Tracking: ${orderData.tracking}. View details in your account.`;
+  const trackingInfo = orderData.tracking?.number ? `${orderData.tracking.carrier || ''} ${orderData.tracking.number}` : (orderData.tracking || 'Pending');
+  const message = `Great news! Your order ${orderData.orderNumber} has been shipped. Tracking: ${trackingInfo}. View details in your account.`;
   return await sendSMS(phoneNumber, message);
 };
 
