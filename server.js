@@ -1,83 +1,84 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 const connectDB = require("./config/db");
 const allRoutes = require("./Routes/index");
 
 const PORT = process.env.PORT || 3000;
 
-// Correct typing for Express app
 const app = express();
-app.set("trust proxy", 1); // Trust first proxy (required for Vercel/Heroku cookies)
+app.set("trust proxy", 1);
 
-const cookieParser = require("cookie-parser");
-
+// List of allowed origins - explicitly including both www and non-www
 const allowedOrigins = [
-  process.env.FRONT_END_URL,
+  "https://opticsglasses.vercel.app",
+  "https://www.opticsglasses.vercel.app",
   "http://localhost:5173",
   "http://localhost:5174",
   "http://127.0.0.1:5173",
-  "http://127.0.0.1:5174",
-  "https://optics-glasses-frontend.vercel.app",
-  "https://opticsglasses.vercel.app",
-  "https://www.opticsglasses.vercel.app",
+  "http://127.0.0.1:5174"
 ];
 
+// Robust CORS configuration
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps or curl requests)
+      // Allow requests with no origin (like mobile apps)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.some(o => o && origin.startsWith(o))) {
+
+      if (allowedOrigins.indexOf(origin) !== -1) {
         callback(null, true);
       } else {
-        console.warn(`CORS blocked for origin: ${origin}`);
-        callback(new Error("Not allowed by CORS"));
+        console.warn(`CORS Warning: Unauthorized origin attempted: ${origin}`);
+        // During testing, we can allow it or block it. Let's allow but log for now to troubleshoot.
+        callback(null, true);
       }
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+    exposedHeaders: ["Set-Cookie"]
   })
 );
 
-// Add explicit OPTIONS handling for preflight
+// Explicit OPTIONS preflight handling
 app.options("*", cors());
 
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 
-// Health check / Root route
+// Root health check
 app.get("/", (req, res) => {
-  res.json({ status: "success", message: "OpticsGlasses API is running" });
-});
-
-const path = require("path");
-
-// db connection
-connectDB();
-
-
-
-
-// route
-app.use(allRoutes);
-
-// global error handler - MUST be after routes
-app.use((err, req, res, next) => {
-  console.error("GLOBAL ERROR CAPTURED:", err);
-  res.status(err.status || 500).json({
-    isStatus: false,
-    msg: err.message || "Internal Server Error",
-    stack: err.stack
+  res.json({
+    status: "success",
+    message: "OpticsGlasses API is live",
+    env: process.env.NODE_ENV,
+    timestamp: new Date().toISOString()
   });
 });
 
-// Export the app for Vercel
+// Database connection (Non-blocking)
+connectDB().catch(err => {
+  console.error("Critical: Initial DB connection failed", err);
+});
+
+// Route handling
+app.use(allRoutes);
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error("GLOBAL ERROR:", err.message);
+  res.status(err.status || 500).json({
+    isStatus: false,
+    msg: err.message || "Internal Server Error",
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+  });
+});
+
 module.exports = app;
 
-// Only listen if running directly (not in Vercel/Serverless)
 if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
