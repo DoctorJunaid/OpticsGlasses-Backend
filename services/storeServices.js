@@ -19,16 +19,25 @@ const getStoreConfig = async () => {
 
 // Update store configuration
 const updateStoreConfig = async (updateData) => {
-    // Upsert: update if exists, insert if it doesn't.
-    // 'new: true' returns the modified document.
-    // 'runValidators: true' ensures schema validation rules are applied.
-    const store = await Store.findOneAndUpdate({}, updateData, {
+    console.log('UPDATING STORE CONFIG WITH:', JSON.stringify(updateData, null, 2));
+
+    // If updateData contains 'cms', flattened it to use dot notation to prevent overwriting other fields
+    let finalUpdate = { ...updateData };
+    if (updateData.cms) {
+        delete finalUpdate.cms;
+        Object.keys(updateData.cms).forEach(key => {
+            finalUpdate[`cms.${key}`] = updateData.cms[key];
+        });
+    }
+
+    const store = await Store.findOneAndUpdate({}, { $set: finalUpdate }, {
         new: true,
         upsert: true,
         runValidators: true,
-        setDefaultsOnInsert: true // important for upsert
+        setDefaultsOnInsert: true
     });
 
+    console.log('UPDATED STORE DOCUMENT CMS:', JSON.stringify(store.cms, null, 2));
     return store;
 };
 
