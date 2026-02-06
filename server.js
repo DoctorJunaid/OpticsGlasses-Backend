@@ -6,6 +6,9 @@ const connectDB = require("./config/db");
 const allRoutes = require("./Routes/index");
 
 const PORT = process.env.PORT || 3000;
+const BUILD_VERSION = "v2.0.2-" + Date.now();
+
+console.log(`🚀 Server Build Version: ${BUILD_VERSION}`);
 
 const app = express();
 app.set("trust proxy", 1);
