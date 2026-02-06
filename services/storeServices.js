@@ -1,4 +1,5 @@
 const Store = require("../models/Store");
+// VERSION: 2.0.1 - Using $set with flattenObject for nested updates
 
 // Get the store configuration (Singleton pattern logic)
 const getStoreConfig = async () => {
