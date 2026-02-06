@@ -21,14 +21,20 @@ const getStoreConfig = async () => {
 const updateStoreConfig = async (updateData) => {
     console.log('UPDATING STORE CONFIG WITH:', JSON.stringify(updateData, null, 2));
 
-    // If updateData contains 'cms', flattened it to use dot notation to prevent overwriting other fields
-    let finalUpdate = { ...updateData };
-    if (updateData.cms) {
-        delete finalUpdate.cms;
-        Object.keys(updateData.cms).forEach(key => {
-            finalUpdate[`cms.${key}`] = updateData.cms[key];
-        });
-    }
+    // Flatten nested objects to use dot notation for partial updates
+    const flatten = (obj, prefix = '') => {
+        return Object.keys(obj).reduce((acc, key) => {
+            const pre = prefix.length ? prefix + '.' : '';
+            if (obj[key] !== null && typeof obj[key] === 'object' && !Array.isArray(obj[key])) {
+                Object.assign(acc, flatten(obj[key], pre + key));
+            } else {
+                acc[pre + key] = obj[key];
+            }
+            return acc;
+        }, {});
+    };
+
+    const finalUpdate = flatten(updateData);
 
     const store = await Store.findOneAndUpdate({}, { $set: finalUpdate }, {
         new: true,
