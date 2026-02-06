@@ -10,6 +10,10 @@ if (!SECRET_KEY) {
 // Responsible ONLY for validating identity
 const verifyToken = (req, res, next) => {
   try {
+    // Log request details for debugging
+    console.log(`AUTH: Processing ${req.method} ${req.originalUrl}`);
+    console.log("AUTH: Cookies received:", Object.keys(req.cookies || {}).join(', ') || 'none');
+
     const authHeader = req.headers.authorization;
     let token;
 
@@ -26,12 +30,13 @@ const verifyToken = (req, res, next) => {
     }
 
     if (!token) {
-      console.log("AUTH FAIL: No token provided");
+      console.log("AUTH FAIL: No token provided for", req.originalUrl);
       return res.status(401).json({ msg: "No token provided" });
     }
 
     const decoded = jwt.verify(token, SECRET_KEY);
     req.user = decoded; // Attach user to request
+    console.log("AUTH: Token verified for user:", decoded.id);
     return next(); // Proceed to the next function
   } catch (err) {
     console.log("AUTH FAIL: JWT Verification Error:", err.message);

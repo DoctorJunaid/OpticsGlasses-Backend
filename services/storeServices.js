@@ -26,23 +26,40 @@ const updateStoreConfig = async (updateData) => {
         store = new Store();
     }
 
-    // Deep merge updateData into store document
-    const deepMerge = (target, source) => {
+    // Deep merge updateData into store document using Mongoose's set() method
+    // This ensures proper change detection for nested objects
+    const deepMergeWithSet = (basePath, source) => {
         for (const [key, value] of Object.entries(source)) {
+            const fullPath = basePath ? `${basePath}.${key}` : key;
+
             if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
-                // If it's an object, initialize if needed and recurse
-                if (!target[key] || typeof target[key] !== 'object') {
-                    target[key] = {};
-                }
-                deepMerge(target[key], value);
+                // Recursively handle nested objects
+                deepMergeWithSet(fullPath, value);
             } else {
-                // Direct assignment for primitives and arrays
-                target[key] = value;
+                // Use Mongoose's set() for proper change detection
+                store.set(fullPath, value);
             }
         }
     };
 
-    deepMerge(store, updateData);
+    deepMergeWithSet('', updateData);
+
+    // Mark all potentially modified nested paths to ensure Mongoose saves them
+    if (updateData.cms) {
+        store.markModified('cms');
+    }
+    if (updateData.storeProfile) {
+        store.markModified('storeProfile');
+    }
+    if (updateData.shipping) {
+        store.markModified('shipping');
+    }
+    if (updateData.seo) {
+        store.markModified('seo');
+    }
+    if (updateData.paymentMethods) {
+        store.markModified('paymentMethods');
+    }
 
     // Save with validation
     await store.save();
