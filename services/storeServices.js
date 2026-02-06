@@ -21,42 +21,33 @@ const getStoreConfig = async () => {
 const updateStoreConfig = async (updateData) => {
     console.log('UPDATING STORE CONFIG WITH:', JSON.stringify(updateData, null, 2));
 
-    let finalUpdate = {};
-
-    // Partially update cms object if present to prevent overwriting sub-objects
-    if (updateData.cms) {
-        const cms = updateData.cms;
-        if (cms.hero) {
-            Object.keys(cms.hero).forEach(key => finalUpdate[`cms.hero.${key}`] = cms.hero[key]);
-        }
-        if (cms.promo) {
-            Object.keys(cms.promo).forEach(key => finalUpdate[`cms.promo.${key}`] = cms.promo[key]);
-        }
-        if (cms.featuredLimit !== undefined) {
-            finalUpdate['cms.featuredLimit'] = cms.featuredLimit;
-        }
-        if (cms.heroSlides) {
-            finalUpdate['cms.heroSlides'] = cms.heroSlides;
-        }
+    let store = await Store.findOne();
+    if (!store) {
+        store = new Store();
     }
 
-    // Handle other top-level fields (shipping, storeProfile, seo)
-    ['storeProfile', 'shipping', 'seo', 'paymentMethods'].forEach(field => {
-        if (updateData[field]) {
-            Object.keys(updateData[field]).forEach(key => {
-                finalUpdate[`${field}.${key}`] = updateData[field][key];
-            });
+    // Deep merge updateData into store document
+    const deepMerge = (target, source) => {
+        for (const [key, value] of Object.entries(source)) {
+            if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+                // If it's an object, initialize if needed and recurse
+                if (!target[key] || typeof target[key] !== 'object') {
+                    target[key] = {};
+                }
+                deepMerge(target[key], value);
+            } else {
+                // Direct assignment for primitives and arrays
+                target[key] = value;
+            }
         }
-    });
+    };
 
-    const store = await Store.findOneAndUpdate({}, { $set: finalUpdate }, {
-        new: true,
-        upsert: true,
-        runValidators: true,
-        setDefaultsOnInsert: true
-    });
+    deepMerge(store, updateData);
 
-    console.log('UPDATED STORE DOCUMENT:', JSON.stringify(store, null, 2));
+    // Save with validation
+    await store.save();
+
+    console.log('RESULTING STORE CONFIG CMS:', JSON.stringify(store.cms, null, 2));
     return store;
 };
 
